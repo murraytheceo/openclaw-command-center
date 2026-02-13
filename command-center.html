@@ -1212,49 +1212,98 @@ function openDocument(path) {
   const fileName = path.split('/').pop();
   const fileExt = fileName.split('.').pop().toLowerCase();
   
-  // Enhanced file opening with type detection
-  try {
-    // Method 1: VS Code protocol (works if VS Code is installed)
-    const vscodeUrl = `vscode://file${fullPath}`;
-    window.open(vscodeUrl, '_blank');
+  // Create modal with file content or options
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+  `;
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  `;
+  
+  content.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h3 style="margin: 0; color: var(--text);">📂 ${fileName}</h3>
+      <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer;">✕</button>
+    </div>
     
-    // Method 2: System file handler
-    setTimeout(() => {
-      if (fileExt === 'html') {
-        // Open HTML files directly in browser
-        window.open(`file://${fullPath}`, '_blank');
-      } else if (['md', 'txt', 'json', 'js', 'css', 'py', 'sh'].includes(fileExt)) {
-        // Text files - try file:// protocol
-        window.open(`file://${fullPath}`, '_blank');
-      } else {
-        // For other files, try system default
-        window.open(`file://${fullPath}`, '_blank');
-      }
-    }, 200);
+    <div style="margin-bottom: 20px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">
+      ${fullPath}
+    </div>
     
-    // Show user-friendly message
-    showToast(`📂 Opening ${fileName} in default editor`);
-    
-    // Console logging for debugging
-    console.log(`📂 Document open request:`, {
-      originalPath: path,
-      fullPath: fullPath,
-      fileName: fileName,
-      fileType: fileExt,
-      vscodeUrl: vscodeUrl
-    });
-    
-  } catch (error) {
-    console.error('Error opening document:', error);
-    showToast(`❌ Could not open ${fileName} - check console for details`);
-    
-    // Fallback: show copy path option
-    setTimeout(() => {
-      if (confirm(`Could not open file directly. Copy path to clipboard instead?\n\n${fullPath}`)) {
-        copyDocPath(path);
-      }
-    }, 1000);
-  }
+    <div style="display: grid; gap: 12px;">
+      <button onclick="openWithVSCode('${fullPath}'); this.parentElement.parentElement.parentElement.remove();" style="padding: 12px; background: var(--primary); border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: 500;">
+        💻 Open in VS Code
+      </button>
+      
+      <button onclick="openInFinder('${fullPath}'); this.parentElement.parentElement.parentElement.remove();" style="padding: 12px; background: rgba(255,255,255,0.08); border: 1px solid var(--border); border-radius: 8px; color: var(--text); cursor: pointer;">
+        📁 Show in Finder
+      </button>
+      
+      <button onclick="copyDocPath('${path}'); this.parentElement.parentElement.parentElement.remove();" style="padding: 12px; background: rgba(255,255,255,0.08); border: 1px solid var(--border); border-radius: 8px; color: var(--text); cursor: pointer;">
+        📋 Copy Path
+      </button>
+      
+      <button onclick="loadFileContent('${fullPath}', this); this.style.display='none'; this.nextElementSibling.style.display='block';" style="padding: 12px; background: rgba(255,255,255,0.08); border: 1px solid var(--border); border-radius: 8px; color: var(--text); cursor: pointer;">
+        👁️ Preview Content
+      </button>
+      
+      <div style="display: none; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; color: var(--muted);" id="file-preview"></div>
+    </div>
+  `;
+  
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+  
+  // Close on background click
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  };
+}
+
+function openWithVSCode(fullPath) {
+  const vscodeUrl = `vscode://file${fullPath}`;
+  window.open(vscodeUrl, '_blank');
+  showToast('💻 Opening in VS Code...');
+}
+
+function openInFinder(fullPath) {
+  // Try to open parent directory
+  const directory = fullPath.substring(0, fullPath.lastIndexOf('/'));
+  const finderUrl = `file://${directory}`;
+  window.open(finderUrl, '_blank');
+  showToast('📁 Opening directory...');
+}
+
+function loadFileContent(fullPath, button) {
+  const preview = button.nextElementSibling;
+  const fileName = fullPath.split('/').pop();
+  
+  // Simulate loading (in real implementation, you'd fetch the file)
+  preview.textContent = 'Loading file content...\n\nNote: This is a simulation. In a real implementation, we would:\n• Read the actual file content\n• Display with syntax highlighting\n• Handle different file types appropriately\n\nFor now, copy the path and open in your preferred editor.';
+  
+  showToast(`👁️ Preview: ${fileName}`);
 }
 
 function copyDocPath(path) {
