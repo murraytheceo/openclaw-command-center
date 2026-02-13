@@ -1208,26 +1208,53 @@ function openFile(filePath) {
 
 // ─── DOCUMENTS FUNCTIONS ───
 function openDocument(path) {
-  // Try multiple methods to open the file
   const fullPath = `/Users/zonte/.openclaw/workspace/${path}`;
+  const fileName = path.split('/').pop();
+  const fileExt = fileName.split('.').pop().toLowerCase();
   
-  // Method 1: Try VS Code first (if available)
-  const vscodeUrl = `vscode://file${fullPath}`;
-  const vscodeWindow = window.open(vscodeUrl, '_blank');
-  
-  // Method 2: Fallback to file:// protocol for local files
-  setTimeout(() => {
-    const fileUrl = `file://${fullPath}`;
-    window.open(fileUrl, '_blank');
-  }, 100);
-  
-  // Method 3: Show success toast
-  showToast(`📂 Opening: ${path.split('/').pop()}`);
-  
-  // Method 4: Log for debugging
-  console.log(`Attempting to open: ${fullPath}`);
-  console.log(`VS Code URL: ${vscodeUrl}`);
-  console.log(`File URL: file://${fullPath}`);
+  // Enhanced file opening with type detection
+  try {
+    // Method 1: VS Code protocol (works if VS Code is installed)
+    const vscodeUrl = `vscode://file${fullPath}`;
+    window.open(vscodeUrl, '_blank');
+    
+    // Method 2: System file handler
+    setTimeout(() => {
+      if (fileExt === 'html') {
+        // Open HTML files directly in browser
+        window.open(`file://${fullPath}`, '_blank');
+      } else if (['md', 'txt', 'json', 'js', 'css', 'py', 'sh'].includes(fileExt)) {
+        // Text files - try file:// protocol
+        window.open(`file://${fullPath}`, '_blank');
+      } else {
+        // For other files, try system default
+        window.open(`file://${fullPath}`, '_blank');
+      }
+    }, 200);
+    
+    // Show user-friendly message
+    showToast(`📂 Opening ${fileName} in default editor`);
+    
+    // Console logging for debugging
+    console.log(`📂 Document open request:`, {
+      originalPath: path,
+      fullPath: fullPath,
+      fileName: fileName,
+      fileType: fileExt,
+      vscodeUrl: vscodeUrl
+    });
+    
+  } catch (error) {
+    console.error('Error opening document:', error);
+    showToast(`❌ Could not open ${fileName} - check console for details`);
+    
+    // Fallback: show copy path option
+    setTimeout(() => {
+      if (confirm(`Could not open file directly. Copy path to clipboard instead?\n\n${fullPath}`)) {
+        copyDocPath(path);
+      }
+    }, 1000);
+  }
 }
 
 function copyDocPath(path) {
