@@ -189,6 +189,98 @@ input,select,textarea,button{font-family:inherit;color:var(--text)}
 
 /* ─── HAMBURGER (mobile) ─── */
 .hamburger{display:none;position:fixed;top:12px;left:12px;z-index:20;background:var(--sidebar-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:18px}
+
+/* ─── ENHANCED DOCUMENT MANAGEMENT ─── */
+.time-filter-btn {
+  position: relative;
+  overflow: hidden;
+}
+.time-filter-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
+}
+.time-filter-btn:hover::before {
+  left: 100%;
+}
+.time-filter-btn.active {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(91, 127, 255, 0.3);
+}
+.time-filter-btn:hover:not(.active) {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.15);
+}
+
+#starred-only-btn.active {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+}
+#starred-only-btn:hover:not(.active) {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.15);
+}
+
+.stat-card .val.blue { color: var(--primary); }
+.stat-card .val.yellow { color: var(--yellow); }
+
+/* Enhanced document card animations */
+.document-category .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+/* Star animation */
+@keyframes starPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+.document-card .star-btn:hover {
+  animation: starPulse 0.6s ease-in-out;
+}
+
+/* Quick access stellar styling */
+.starred-quick-access {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.05));
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  position: relative;
+}
+.starred-quick-access::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--yellow), rgba(251, 191, 36, 0.5), var(--yellow));
+  border-radius: 8px 8px 0 0;
+}
+
+/* Filter summary styling */
+.filter-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(91, 127, 255, 0.1);
+  border: 1px solid rgba(91, 127, 255, 0.2);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+
+/* Improved toast notifications */
+.toast-notification {
+  backdrop-filter: blur(10px);
+  font-family: 'DM Sans', sans-serif;
+}
+
 @media(max-width:768px){
   .sidebar{position:fixed;left:-260px;top:0;bottom:0;width:260px;transition:left .25s ease;z-index:15}
   .sidebar.open{left:0}
@@ -196,6 +288,20 @@ input,select,textarea,button{font-family:inherit;color:var(--text)}
   .main{padding:20px 16px;padding-top:52px}
   .stat-row{grid-template-columns:1fr 1fr}
   #chat-overlay{width:calc(100vw - 24px);right:12px;bottom:12px;height:60vh}
+  
+  /* Mobile enhancements for document management */
+  .time-filter-btn {
+    font-size: 11px !important;
+    padding: 5px 8px !important;
+  }
+  .documents-header {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .documents-header > div {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
 }
 </style>
 </head>
@@ -470,6 +576,66 @@ const DOCUMENT_CATEGORIES = {
   }
 };
 
+// ─── TIME FILTERING & FAVORITES ───
+let currentTimeFilter = 'all';
+let starredDocs = JSON.parse(localStorage.getItem('cc3_starred_docs') || '[]');
+let filterPreferences = JSON.parse(localStorage.getItem('cc3_filter_prefs') || '{"timeFilter": "all", "onlyStarred": false}');
+
+function isDocumentInTimeRange(docDate, timeFilter) {
+  if (timeFilter === 'all') return true;
+  
+  const now = new Date();
+  const docDateObj = new Date(docDate);
+  
+  switch(timeFilter) {
+    case 'today':
+      return docDateObj.toDateString() === now.toDateString();
+    case 'week':
+      const weekAgo = new Date(now);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return docDateObj >= weekAgo;
+    case 'month':
+      const monthAgo = new Date(now);
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      return docDateObj >= monthAgo;
+    default:
+      return true;
+  }
+}
+
+function toggleStarDocument(docPath) {
+  const index = starredDocs.indexOf(docPath);
+  if (index > -1) {
+    starredDocs.splice(index, 1);
+  } else {
+    starredDocs.push(docPath);
+  }
+  localStorage.setItem('cc3_starred_docs', JSON.stringify(starredDocs));
+  renderSection('documents');
+  showToast(index > -1 ? '⭐ Removed from favorites' : '⭐ Added to favorites');
+}
+
+function setTimeFilter(filter) {
+  currentTimeFilter = filter;
+  filterPreferences.timeFilter = filter;
+  localStorage.setItem('cc3_filter_prefs', JSON.stringify(filterPreferences));
+  
+  // Update UI
+  document.querySelectorAll('.time-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+  
+  renderSection('documents');
+}
+
+function toggleStarredOnly() {
+  filterPreferences.onlyStarred = !filterPreferences.onlyStarred;
+  localStorage.setItem('cc3_filter_prefs', JSON.stringify(filterPreferences));
+  
+  document.getElementById('starred-only-btn').classList.toggle('active', filterPreferences.onlyStarred);
+  renderSection('documents');
+}
+
 const DEFAULT_TASKS=[
   {id:1,title:'Appeal Google GCP ban',priority:'urgent',agent:'QC',done:false},
   {id:2,title:'Set up 3rd AI reviewer (Groq)',priority:'urgent',agent:'QC',done:false},
@@ -718,81 +884,156 @@ function renderSettings(){
 }
 
 function renderDocuments(){
+  // Load saved preferences
+  currentTimeFilter = filterPreferences.timeFilter || 'all';
+  
+  // Calculate filtered documents
+  let allFilteredDocs = [];
+  Object.values(DOCUMENT_CATEGORIES).forEach(cat => {
+    cat.documents.forEach(doc => {
+      const matchesTime = isDocumentInTimeRange(doc.date, currentTimeFilter);
+      const matchesStarFilter = !filterPreferences.onlyStarred || starredDocs.includes(doc.path);
+      if (matchesTime && matchesStarFilter) {
+        allFilteredDocs.push(doc);
+      }
+    });
+  });
+  
   const totalDocs = Object.values(DOCUMENT_CATEGORIES).reduce((sum, cat) => sum + cat.documents.length, 0);
-  const recentDocs = Object.values(DOCUMENT_CATEGORIES).flatMap(cat => 
-    cat.documents.filter(doc => doc.recent)
-  );
-  const todayDocs = recentDocs.filter(doc => doc.date === '2026-02-12');
+  const starredCount = starredDocs.length;
+  const todayDocs = allFilteredDocs.filter(doc => doc.date === '2026-02-12');
   
   let h = `<div class="documents-header" style="margin-bottom:20px;">
-    <h2 style="font-size:22px;font-weight:700;margin-bottom:16px">📚 All Documents</h2>
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-      <input type="text" id="doc-search" placeholder="Search documents..." style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);width:300px;color:var(--text);outline:none;">
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:16px">📚 Document Management ${allFilteredDocs.length !== totalDocs ? `<span style="color:var(--muted);font-size:14px;font-weight:400;">(${allFilteredDocs.length}/${totalDocs})</span>` : ''}</h2>
+    
+    <!-- Enhanced Filter Controls -->
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;align-items:center;padding:16px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid var(--border);">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="time-filter-btn ${currentTimeFilter === 'all' ? 'active' : ''}" data-filter="all" onclick="setTimeFilter('all')" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:${currentTimeFilter === 'all' ? 'var(--primary)' : 'rgba(255,255,255,0.05)'};color:${currentTimeFilter === 'all' ? 'white' : 'var(--text)'};font-size:12px;cursor:pointer;transition:all 0.2s;font-weight:500;">🕐 All Time</button>
+        <button class="time-filter-btn ${currentTimeFilter === 'today' ? 'active' : ''}" data-filter="today" onclick="setTimeFilter('today')" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:${currentTimeFilter === 'today' ? 'var(--primary)' : 'rgba(255,255,255,0.05)'};color:${currentTimeFilter === 'today' ? 'white' : 'var(--text)'};font-size:12px;cursor:pointer;transition:all 0.2s;font-weight:500;">📅 Today</button>
+        <button class="time-filter-btn ${currentTimeFilter === 'week' ? 'active' : ''}" data-filter="week" onclick="setTimeFilter('week')" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:${currentTimeFilter === 'week' ? 'var(--primary)' : 'rgba(255,255,255,0.05)'};color:${currentTimeFilter === 'week' ? 'white' : 'var(--text)'};font-size:12px;cursor:pointer;transition:all 0.2s;font-weight:500;">📊 This Week</button>
+        <button class="time-filter-btn ${currentTimeFilter === 'month' ? 'active' : ''}" data-filter="month" onclick="setTimeFilter('month')" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:${currentTimeFilter === 'month' ? 'var(--primary)' : 'rgba(255,255,255,0.05)'};color:${currentTimeFilter === 'month' ? 'white' : 'var(--text)'};font-size:12px;cursor:pointer;transition:all 0.2s;font-weight:500;">📈 This Month</button>
+      </div>
+      <div style="border-left:1px solid var(--border);padding-left:12px;margin-left:4px;">
+        <button id="starred-only-btn" onclick="toggleStarredOnly()" class="${filterPreferences.onlyStarred ? 'active' : ''}" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:${filterPreferences.onlyStarred ? 'var(--yellow)' : 'rgba(255,255,255,0.05)'};color:${filterPreferences.onlyStarred ? 'black' : 'var(--text)'};font-size:12px;cursor:pointer;transition:all 0.2s;font-weight:500;">⭐ Favorites Only</button>
+      </div>
+    </div>
+    
+    <!-- Search Bar -->
+    <div style="display:flex;align-items:center;gap:12px;">
+      <input type="text" id="doc-search" placeholder="Search documents..." style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);flex:1;color:var(--text);outline:none;">
       <button onclick="filterDocuments()" style="padding:8px 16px;border-radius:8px;background:var(--primary);border:none;color:white;cursor:pointer;font-weight:500;">Search</button>
       <button onclick="clearSearch()" style="padding:8px 16px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid var(--border);color:var(--text);cursor:pointer;">Clear</button>
     </div>
   </div>`;
 
-  // Stats row
+  // Enhanced Stats row
   h += `<div class="stat-row" style="margin-bottom:24px;">
     <div class="stat-card">
       <div class="label">Total Documents</div>
       <div class="val">${totalDocs}</div>
     </div>
     <div class="stat-card">
-      <div class="label">Recent (This Week)</div>
-      <div class="val">${recentDocs.length}</div>
+      <div class="label">Filtered Results</div>
+      <div class="val blue">${allFilteredDocs.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">⭐ Starred</div>
+      <div class="val yellow">${starredCount}</div>
     </div>
     <div class="stat-card">
       <div class="label">Created Today</div>
       <div class="val green">${todayDocs.length}</div>
     </div>
-    <div class="stat-card">
-      <div class="label">Categories</div>
-      <div class="val">${Object.keys(DOCUMENT_CATEGORIES).length}</div>
-    </div>
   </div>`;
 
-  // Recent documents highlight
-  h += `<div class="card" style="margin-bottom:20px;">
-    <h3>🔥 Created Today</h3>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:12px;">`;
-  
-  todayDocs.slice(0, 6).forEach(doc => {
-    h += `<div style="padding:12px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.02);transition:background 0.15s;" onclick="openDocument('${doc.path}')" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'">
-      <div style="font-weight:600;font-size:13px;margin-bottom:4px;color:var(--text)">${doc.name}</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${doc.size} • ${DOCUMENT_CATEGORIES[Object.keys(DOCUMENT_CATEGORIES).find(k => DOCUMENT_CATEGORIES[k].documents.includes(doc))].name}</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.4">${doc.description}</div>
-    </div>`;
-  });
-  
-  h += `</div></div>`;
+  // Quick access to starred documents
+  if (starredCount > 0 && !filterPreferences.onlyStarred) {
+    h += `<div class="card" style="margin-bottom:20px;background:rgba(251, 191, 36, 0.08);border:1px solid rgba(251, 191, 36, 0.2);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h3 style="color:var(--yellow);margin:0;">⭐ Starred Documents (${starredCount})</h3>
+        <button onclick="toggleStarredOnly()" style="padding:4px 8px;background:var(--yellow);border:none;border-radius:4px;color:black;font-size:11px;cursor:pointer;font-weight:500;">View All Starred</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;">`;
+    
+    // Show first 6 starred documents
+    const starredDocsData = [];
+    Object.values(DOCUMENT_CATEGORIES).forEach(cat => {
+      cat.documents.forEach(doc => {
+        if (starredDocs.includes(doc.path)) {
+          starredDocsData.push({ ...doc, category: cat.name, categoryIcon: cat.icon });
+        }
+      });
+    });
+    
+    starredDocsData.slice(0, 6).forEach(doc => {
+      h += `<div style="padding:8px;border:1px solid rgba(251, 191, 36, 0.2);border-radius:6px;cursor:pointer;background:rgba(251, 191, 36, 0.05);transition:all 0.15s;" onclick="openDocument('${doc.path}')" onmouseover="this.style.background='rgba(251, 191, 36, 0.1)'" onmouseout="this.style.background='rgba(251, 191, 36, 0.05)'">
+        <div style="font-weight:600;font-size:12px;margin-bottom:2px;color:var(--text);display:flex;align-items:center;gap:4px;">
+          <span>⭐</span>
+          ${doc.name}
+        </div>
+        <div style="font-size:10px;color:var(--muted);">${doc.size} • ${doc.categoryIcon} ${doc.category}</div>
+      </div>`;
+    });
+    
+    h += `</div></div>`;
+  }
 
-  // Categories
+  // Categories with enhanced filtering
   Object.entries(DOCUMENT_CATEGORIES).forEach(([catKey, category]) => {
-    const recentCount = category.documents.filter(d => d.recent).length;
+    let categoryDocs = category.documents.filter(doc => {
+      const matchesTime = isDocumentInTimeRange(doc.date, currentTimeFilter);
+      const matchesStarFilter = !filterPreferences.onlyStarred || starredDocs.includes(doc.path);
+      return matchesTime && matchesStarFilter;
+    });
+    
+    // Sort: starred docs first, then by priority, then by date
+    categoryDocs.sort((a, b) => {
+      const aStarred = starredDocs.includes(a.path);
+      const bStarred = starredDocs.includes(b.path);
+      
+      if (aStarred && !bStarred) return -1;
+      if (!aStarred && bStarred) return 1;
+      
+      // Both starred or both not starred - sort by priority then date
+      const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+      const aPriority = priorityOrder[a.priority] || 1;
+      const bPriority = priorityOrder[b.priority] || 1;
+      
+      if (aPriority !== bPriority) return bPriority - aPriority;
+      
+      return new Date(b.date) - new Date(a.date);
+    });
+    
+    if (categoryDocs.length === 0) return; // Skip empty categories
+    
+    const starredInCategory = categoryDocs.filter(doc => starredDocs.includes(doc.path)).length;
     
     h += `<div class="card document-category" style="margin-bottom:16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
         <h3 style="display:flex;align-items:center;gap:8px;margin:0;">
           <span style="color:${category.color}">${category.icon}</span>
           ${category.name}
-          <span style="font-size:12px;color:var(--muted);font-weight:normal;">(${category.documents.length})</span>
-          ${recentCount > 0 ? `<span style="background:var(--green);color:white;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:500;">${recentCount} NEW</span>` : ''}
+          <span style="font-size:12px;color:var(--muted);font-weight:normal;">(${categoryDocs.length})</span>
+          ${starredInCategory > 0 ? `<span style="background:var(--yellow);color:black;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:500;">⭐ ${starredInCategory}</span>` : ''}
         </h3>
         <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;" onclick="toggleCategory('${catKey}')" id="toggle-${catKey}">▼</button>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:12px;" id="cat-${catKey}">`;
     
-    category.documents.forEach(doc => {
+    categoryDocs.forEach(doc => {
       const isRecent = doc.recent;
       const isPriority = doc.priority === 'high';
+      const isStarred = starredDocs.includes(doc.path);
       
-      h += `<div style="padding:14px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.02);transition:all 0.15s;${isRecent ? 'border-left:3px solid var(--green);' : ''}${isPriority ? 'border-top:2px solid var(--red);' : ''}" onclick="openDocument('${doc.path}')" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'">
+      h += `<div style="padding:14px;border:1px solid ${isStarred ? 'rgba(251, 191, 36, 0.3)' : 'var(--border)'};border-radius:8px;cursor:pointer;background:${isStarred ? 'rgba(251, 191, 36, 0.08)' : 'rgba(255,255,255,0.02)'};transition:all 0.15s;${isRecent ? 'border-left:3px solid var(--green);' : ''}${isPriority ? 'border-top:2px solid var(--red);' : ''}${isStarred ? 'box-shadow: 0 2px 8px rgba(251, 191, 36, 0.1);' : ''}" onclick="openDocument('${doc.path}')" onmouseover="this.style.background='${isStarred ? 'rgba(251, 191, 36, 0.12)' : 'rgba(255,255,255,0.04)'}'" onmouseout="this.style.background='${isStarred ? 'rgba(251, 191, 36, 0.08)' : 'rgba(255,255,255,0.02)'}'">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
-          <div style="font-weight:600;font-size:14px;color:var(--text)">${doc.name}</div>
+          <div style="font-weight:600;font-size:14px;color:var(--text);display:flex;align-items:center;gap:6px;">
+            ${isStarred ? '<span style="color:var(--yellow);">⭐</span>' : ''}
+            ${doc.name}
+          </div>
           <div style="display:flex;gap:6px;">
-            ${isPriority ? '<span style="background:var(--red);color:white;font-size:9px;padding:2px 5px;border-radius:6px;font-weight:600;">HIGH</span>' : ''}
+            ${isPriority ? '<span style="background:var(--red);color:white;font-size:9px;padding:2px 5px;border-radius:6px;font-weight:600;">URGENT</span>' : ''}
             ${isRecent ? '<span style="background:var(--green);color:white;font-size:9px;padding:2px 5px;border-radius:6px;font-weight:600;">NEW</span>' : ''}
           </div>
         </div>
@@ -802,6 +1043,7 @@ function renderDocuments(){
         </div>
         <div style="font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:10px;">${doc.description}</div>
         <div style="display:flex;gap:8px;">
+          <button onclick="event.stopPropagation();toggleStarDocument('${doc.path}')" style="padding:4px 8px;background:${isStarred ? 'var(--yellow)' : 'rgba(255,255,255,0.08)'};border:1px solid ${isStarred ? 'var(--yellow)' : 'var(--border)'};border-radius:4px;color:${isStarred ? 'black' : 'var(--text)'};font-size:11px;cursor:pointer;transition:all 0.2s;font-weight:500;">${isStarred ? '⭐' : '☆'} ${isStarred ? 'Starred' : 'Star'}</button>
           <button onclick="event.stopPropagation();openDocument('${doc.path}')" style="padding:4px 8px;background:var(--primary);border:none;border-radius:4px;color:white;font-size:11px;cursor:pointer;">📂 Open</button>
           <button onclick="event.stopPropagation();copyDocPath('${doc.path}')" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;cursor:pointer;">📋 Copy</button>
         </div>
@@ -1089,7 +1331,30 @@ function showToast(message) {
 }
 
 // Add search on Enter key
+// ─── ENHANCED DOCUMENT MANAGEMENT INITIALIZATION ───
+function initializeDocumentManagement() {
+  // Load saved preferences and starred documents
+  starredDocs = JSON.parse(localStorage.getItem('cc3_starred_docs') || '[]');
+  filterPreferences = JSON.parse(localStorage.getItem('cc3_filter_prefs') || '{"timeFilter": "all", "onlyStarred": false}');
+  currentTimeFilter = filterPreferences.timeFilter;
+  
+  // Migrate old data if needed
+  if (!filterPreferences.timeFilter) {
+    filterPreferences.timeFilter = 'all';
+    filterPreferences.onlyStarred = false;
+    localStorage.setItem('cc3_filter_prefs', JSON.stringify(filterPreferences));
+  }
+  
+  console.log(`📚 Document Management Initialized:
+  • Starred documents: ${starredDocs.length}
+  • Time filter: ${currentTimeFilter}
+  • Favorites only: ${filterPreferences.onlyStarred}`);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize enhanced document management
+  initializeDocumentManagement();
+  
   // This will be called after the page loads
   setTimeout(() => {
     const searchInput = document.getElementById('doc-search');
@@ -1100,6 +1365,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     }
+    
+    // Update UI state after render
+    setTimeout(() => {
+      if (currentSection === 'documents') {
+        // Update filter button states
+        document.querySelectorAll('.time-filter-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.filter === currentTimeFilter);
+        });
+        
+        const starredBtn = document.getElementById('starred-only-btn');
+        if (starredBtn) {
+          starredBtn.classList.toggle('active', filterPreferences.onlyStarred);
+        }
+      }
+    }, 200);
   }, 100);
 });
 
