@@ -351,55 +351,102 @@ input,select,textarea,button{font-family:inherit;color:var(--text)}
 <script>
 // ─── DATA ───
 const AGENTS=[
-  {id:'research',emoji:'🔬',name:'Deep Research',role:'Web Research & Intel',status:'idle',task:'Awaiting assignment',model:'Claude Opus 4',tasks:0},
-  {id:'qc',emoji:'✅',name:'QC',role:'Quality Control & Review',status:'idle',task:'Awaiting assignment',model:'Claude + GPT-4o + Groq',tasks:0},
-  {id:'muteswap',emoji:'📈',name:'MuteSwap Growth',role:'Marketing & Growth',status:'idle',task:'Awaiting assignment',model:'Claude Sonnet 4',tasks:0},
-  {id:'quant',emoji:'📊',name:'My Quant',role:'Quantitative Analysis',status:'active',task:'Sniper system V2 — needs real backtest',model:'Claude Opus 4',tasks:3},
-  {id:'theodore',emoji:'🔧',name:'Theodore',role:'Dashboard & Coding',status:'working',task:'Command Center V3 rebuild',model:'Claude Sonnet 4',tasks:2}
+  {id:'erica',emoji:'👩‍💼',name:'Erica Hale',role:'Chief Quality Officer',status:'working',task:'QC validation of night deliverables',model:'Claude Sonnet 4',tasks:5},
+  {id:'research',emoji:'🔬',name:'Deep Research',role:'Web Research & Intel',status:'active',task:'Trading system crash detection research',model:'Claude Opus 4',tasks:1},
+  {id:'muteswap',emoji:'📈',name:'MuteSwap Growth',role:'Marketing & Growth',status:'complete',task:'SUPERSTAR METHOD agent created (needs revision)',model:'Claude Sonnet 4',tasks:1},
+  {id:'ux',emoji:'🎨',name:'Japandi Designer',role:'UX Research & Design',status:'complete',task:'Dashboard redesign research (97/100)',model:'Claude Sonnet 4',tasks:1},
+  {id:'watch',emoji:'👁️',name:'Chat Watch',role:'Night Mission Monitoring',status:'active',task:'Comprehensive work documentation',model:'Claude Sonnet 4',tasks:1},
+  {id:'theodore',emoji:'🔧',name:'Theodore',role:'Dashboard & Coding',status:'complete',task:'VS Code integration fix deployed',model:'Claude Sonnet 4',tasks:3}
 ];
 
 const AGENT_STATUS=[
   {
-    name:'Ginger Shot Business',
+    name:'Erica Hale QC Validation',
     status:'complete',
-    detail:'30 brand names, $48K plan',
+    detail:'2/3 deliverables PASS, 1 TIER 1 FAIL',
     files:[
-      {name:'HTML Business Plan', path:'ginger-shot-business/ginger-shot-business-plan.html', type:'html'},
-      {name:'Google Docs Version', path:'ginger-shot-business/ginger-shot-business-plan.md', type:'markdown'},
-      {name:'Executive Summary', path:'ginger-shot-business/executive-summary.md', type:'markdown'}
+      {name:'QC Validation Report', path:'agents/ERICA-HALE-QC-VALIDATION-REPORT.md', type:'markdown'},
+      {name:'Erica Blueprint (Final)', path:'agents/ERICA-HALE-QC-AGENT-DEEP-PROMPT-5-FINAL.md', type:'markdown'},
+      {name:'Group Chat Implementation', path:'ERICA-GROUP-CHAT-IMPLEMENTATION.md', type:'markdown'}
     ]
   },
   {
-    name:'Constitution V3',
-    status:'complete',
-    detail:'merged document ready',
+    name:'MuteSwap Growth Agent',
+    status:'revision-required',
+    detail:'SUPERSTAR METHOD created, failed QC (87/100)',
     files:[
-      {name:'Constitution V3', path:'/Users/zonte/.openclaw/workspace/reference/CONSTITUTION-V3.md', type:'markdown'}
+      {name:'MuteSwap Agent V3 (FINAL)', path:'agents/muteswap-growth-agent/MUTESWAP-GROWTH-AGENT-FINAL-V3.md', type:'markdown'},
+      {name:'Agent Creation Process', path:'agents/muteswap-growth-agent/', type:'folder'}
     ]
   },
   {
-    name:'Esca Analysis',
+    name:'Dashboard VS Code Fix',
     status:'complete',
-    detail:'brand review, agent team',
+    detail:'File Opener API + 4-tier fallback system',
     files:[
-      {name:'Analysis Report', path:'esca-analysis/analysis.md', type:'markdown'},
-      {name:'Brand Assets Folder', path:'esca-analysis/assets/', type:'folder'}
+      {name:'File Opener API Server', path:'dashboard/file-opener-api.js', type:'javascript'},
+      {name:'Enhanced Integration', path:'dashboard/improved-vscode-integration.js', type:'javascript'},
+      {name:'Start Script', path:'dashboard/start-file-opener.sh', type:'shell'}
     ]
   },
   {
-    name:'V3 Case Study',
+    name:'Japandi UI Redesign Research',
     status:'complete',
-    detail:'methodology breakthrough',
+    detail:'97/100 design plan (98/100 QC pass)',
     files:[
-      {name:'Breakthrough Methodology', path:'v3-case-study/breakthrough-methodology.md', type:'markdown'}
+      {name:'Redesign Research V1', path:'JAPANDI-REDESIGN-RESEARCH-V1.md', type:'markdown'},
+      {name:'Implementation Guide', path:'JAPANDI-IMPLEMENTATION-GUIDE.md', type:'markdown'},
+      {name:'Executive Summary', path:'JAPANDI-EXECUTIVE-SUMMARY.md', type:'markdown'}
     ]
   },
   {
-    name:'Dashboard Integration',
-    status:'failed',
-    detail:'built code but not integrated',
+    name:'Trading System Research',
+    status:'complete',
+    detail:'Crash detection comprehensive analysis',
     files:[
-      {name:'Dashboard Code', path:'dashboard/command-center.html', type:'html'}
+      {name:'Crash Detection Research', path:'crash_detection_research.md', type:'markdown'}
+    ]
+  },
+  {
+    name:'Ginger Shot El Salvador',
+    status:'complete',
+    detail:'Market optimization, 85% success probability',
+    files:[
+      {name:'El Salvador Optimization', path:'El_Salvador_Ginger_Shot_Business_Optimization.md', type:'markdown'}
+    ]
+  },
+  {
+    name:'100M+ Acceleration Tools',
+    status:'complete',
+    detail:'Strategic subscriptions analysis',
+    files:[
+      {name:'Acceleration Tools Analysis', path:'reference/100M-ACCELERATION-TOOLS.md', type:'markdown'}
+    ]
+  },
+  {
+    name:'SUPERSTAR Creation Method',
+    status:'complete',
+    detail:'Reverse engineering + hostile peer review methodology',
+    files:[
+      {name:'SUPERSTAR Method Documentation', path:'reference/SUPERSTAR-CREATION-METHOD.md', type:'markdown'}
+    ]
+  },
+  {
+    name:'Dashboard Testing & Enhancement',
+    status:'complete',
+    detail:'39/43 features verified, notes system enhanced',
+    files:[
+      {name:'Command Center (Enhanced)', path:'dashboard/command-center.html', type:'html'},
+      {name:'Dashboard Testing Report', path:'DASHBOARD-TESTING-COMPLETE.md', type:'markdown'}
+    ]
+  },
+  {
+    name:'Esca Wallet Strategic Review',
+    status:'complete',
+    detail:'88/100 quality, strategic opportunity validated',
+    files:[
+      {name:'Strategic Review 2026-02-12', path:'memory/ESCA-WALLET-STRATEGIC-REVIEW-2026-02-12.md', type:'markdown'},
+      {name:'Overnight Analysis V1', path:'esca/OVERNIGHT-ANALYSIS-V1.md', type:'markdown'}
     ]
   }
 ];
@@ -1527,9 +1574,9 @@ function openDocument(path) {
 }
 
 function openWithVSCode(fullPath) {
-  const vscodeUrl = `vscode://file${fullPath}`;
-  window.open(vscodeUrl, '_blank');
-  showToast('💻 Opening in VS Code...');
+  // Use the enhanced document opening system
+  const relativePath = fullPath.replace('/Users/zonte/.openclaw/workspace/', '');
+  showDocumentActions(relativePath);
 }
 
 function openInFinder(fullPath) {
@@ -1723,5 +1770,9 @@ document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Ent
 document.getElementById('l-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('l-pass').focus()});
 if(localStorage.getItem('cc3_auth')==='1')showApp();
 </script>
+
+<!-- Enhanced VS Code Integration -->
+<script src="./improved-vscode-integration.js"></script>
+
 </body>
 </html>
