@@ -855,7 +855,68 @@ function renderExpenses(){
 }
 
 function renderNotes(){
-  return `<h2 style="font-size:22px;font-weight:700;margin-bottom:20px">Notes</h2><div class="card"><textarea id="notes-area">${notes}</textarea></div>`;
+  const savedNotes = JSON.parse(localStorage.getItem('cc3_structured_notes') || '{}');
+  const noteCategories = {
+    'urgent': { name: '🔥 Urgent', color: 'var(--red)', notes: savedNotes.urgent || [] },
+    'mission': { name: '🎯 Mission Critical', color: 'var(--primary)', notes: savedNotes.mission || [] },
+    'ideas': { name: '💡 Ideas & Insights', color: 'var(--yellow)', notes: savedNotes.ideas || [] },
+    'progress': { name: '📈 Progress & Updates', color: 'var(--green)', notes: savedNotes.progress || [] },
+    'reminders': { name: '⏰ Reminders & Follow-ups', color: 'var(--muted)', notes: savedNotes.reminders || [] }
+  };
+  
+  let h = `<h2 style="font-size:22px;font-weight:700;margin-bottom:20px">📝 Organized Notes</h2>`;
+  
+  // Quick add section
+  h += `<div class="card" style="margin-bottom:16px;">
+    <h3>Quick Add Note</h3>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <select id="note-category" style="padding:8px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.04);color:var(--text);">
+        <option value="urgent">🔥 Urgent</option>
+        <option value="mission">🎯 Mission Critical</option>
+        <option value="ideas">💡 Ideas & Insights</option>
+        <option value="progress">📈 Progress & Updates</option>
+        <option value="reminders">⏰ Reminders</option>
+      </select>
+      <input type="text" id="new-note" placeholder="Add a note..." style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.04);color:var(--text);outline:none;">
+      <button onclick="addStructuredNote()" style="padding:8px 16px;background:var(--primary);border:none;border-radius:6px;color:white;cursor:pointer;font-weight:500;">+ Add</button>
+    </div>
+  </div>`;
+
+  // Structured note categories
+  Object.entries(noteCategories).forEach(([catKey, cat]) => {
+    h += `<div class="card" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="color:${cat.color};margin:0;">${cat.name} <span style="font-size:12px;color:var(--muted);font-weight:normal;">(${cat.notes.length})</span></h3>
+        <button onclick="toggleNoteCategory('${catKey}')" id="toggle-notes-${catKey}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">▼</button>
+      </div>
+      <div id="notes-${catKey}" style="display:block;">`;
+    
+    if (cat.notes.length === 0) {
+      h += `<div style="text-align:center;color:var(--muted);font-style:italic;padding:20px;">No notes in this category yet</div>`;
+    } else {
+      cat.notes.forEach((note, index) => {
+        const noteDate = new Date(note.timestamp).toLocaleString();
+        h += `<div style="padding:10px;border:1px solid var(--border);border-radius:6px;margin-bottom:8px;background:rgba(255,255,255,0.02);">
+          <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
+            <div style="font-size:13px;line-height:1.5;flex:1;">${note.text}</div>
+            <button onclick="removeStructuredNote('${catKey}', ${index})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px 4px;">×</button>
+          </div>
+          <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${noteDate}</div>
+        </div>`;
+      });
+    }
+    
+    h += `</div></div>`;
+  });
+
+  // Legacy notes section (for backwards compatibility)  
+  h += `<div class="card">
+    <h3>📄 Legacy Notes (Freeform)</h3>
+    <textarea id="notes-area" style="width:100%;min-height:200px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);resize:vertical;outline:none;">${notes}</textarea>
+    <div style="margin-top:8px;font-size:11px;color:var(--muted);">Legacy notes are auto-saved. Use structured notes above for better organization.</div>
+  </div>`;
+
+  return h;
 }
 
 function renderSettings(){
@@ -1147,6 +1208,93 @@ function initNotes(){
   const ta=document.getElementById('notes-area');
   if(!ta)return;
   ta.addEventListener('input',()=>{notes=ta.value;localStorage.setItem('cc3_notes',notes);});
+  
+  // Enhanced notes keyboard shortcuts
+  const newNoteInput = document.getElementById('new-note');
+  if (newNoteInput) {
+    newNoteInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        addStructuredNote();
+      }
+    });
+  }
+}
+
+// ─── STRUCTURED NOTES ───
+function addStructuredNote() {
+  const input = document.getElementById('new-note');
+  const category = document.getElementById('note-category');
+  
+  if (!input || !category || !input.value.trim()) return;
+  
+  const noteText = input.value.trim();
+  const catKey = category.value;
+  
+  // Get existing notes
+  const savedNotes = JSON.parse(localStorage.getItem('cc3_structured_notes') || '{}');
+  if (!savedNotes[catKey]) savedNotes[catKey] = [];
+  
+  // Add new note
+  const newNote = {
+    text: noteText,
+    timestamp: new Date().toISOString(),
+    id: Date.now()
+  };
+  
+  savedNotes[catKey].unshift(newNote); // Add to beginning
+  
+  // Save and update UI
+  localStorage.setItem('cc3_structured_notes', JSON.stringify(savedNotes));
+  input.value = '';
+  renderSection('notes');
+  
+  showToast(`✅ Note added to ${category.options[category.selectedIndex].text}`);
+}
+
+function removeStructuredNote(category, index) {
+  const savedNotes = JSON.parse(localStorage.getItem('cc3_structured_notes') || '{}');
+  
+  if (savedNotes[category] && savedNotes[category][index]) {
+    savedNotes[category].splice(index, 1);
+    localStorage.setItem('cc3_structured_notes', JSON.stringify(savedNotes));
+    renderSection('notes');
+    showToast('🗑️ Note removed');
+  }
+}
+
+function toggleNoteCategory(catKey) {
+  const container = document.getElementById(`notes-${catKey}`);
+  const btn = document.getElementById(`toggle-notes-${catKey}`);
+  
+  if (!container || !btn) return;
+  
+  const isHidden = container.style.display === 'none';
+  container.style.display = isHidden ? 'block' : 'none';
+  btn.textContent = isHidden ? '▼' : '▶';
+}
+
+function exportNotes() {
+  const savedNotes = JSON.parse(localStorage.getItem('cc3_structured_notes') || '{}');
+  const legacyNotes = localStorage.getItem('cc3_notes') || '';
+  
+  const exportData = {
+    structured: savedNotes,
+    legacy: legacyNotes,
+    exported: new Date().toISOString()
+  };
+  
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `murray-notes-${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast('📥 Notes exported successfully');
 }
 
 // ─── CHAT ───
