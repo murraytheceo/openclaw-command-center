@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Murray Command Center</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0d0f11;--surface:#161a1e;--surface2:#1e2328;--surface3:#262b31;
+--border:#2a2f36;--text:#e2e4e8;--text2:#8b919a;--text3:#565c66;
+--accent:#6c8cff;--urgent:#ef4444;--todo:#3b82f6;--deferred:#eab308;
+--ideas:#a855f7;--done:#22c55e;--radius:10px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+input,select,textarea{font-family:inherit;font-size:inherit}
+
+/* Header */
+.header{padding:24px 32px 0;max-width:1400px;margin:0 auto}
+.header h1{font-size:28px;font-weight:700;letter-spacing:-0.5px}
+.header h1 span{font-size:32px;margin-right:6px}
+.header .subtitle{color:var(--text2);font-size:14px;margin-top:2px;font-weight:500}
+
+/* Stats */
+.stats{display:flex;gap:12px;padding:16px 32px;max-width:1400px;margin:0 auto;flex-wrap:wrap}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.stat .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* Controls */
+.controls{display:flex;gap:10px;padding:12px 32px;max-width:1400px;margin:0 auto;flex-wrap:wrap;align-items:center}
+.search{flex:1;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 14px;color:var(--text);font-size:14px;outline:none;transition:border .2s}
+.search:focus{border-color:var(--accent)}
+.tag-filter{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 14px;color:var(--text);font-size:14px;outline:none;min-width:140px}
+.sort-btn,.add-btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 14px;color:var(--text);font-size:13px;font-weight:600;transition:all .2s}
+.sort-btn:hover,.add-btn:hover{background:var(--surface2);border-color:var(--accent)}
+.add-btn{background:var(--accent);border-color:var(--accent);color:#fff}
+.add-btn:hover{background:#5a7ae6;border-color:#5a7ae6}
+
+/* Board */
+.board{max-width:1400px;margin:0 auto;padding:8px 32px 32px;display:flex;flex-direction:column;gap:20px}
+.column{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.col-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none}
+.col-header h2{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.col-header .count{background:var(--surface3);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600;color:var(--text2)}
+.col-header .chevron{color:var(--text3);font-size:18px;transition:transform .2s}
+.col-header .chevron.collapsed{transform:rotate(-90deg)}
+.col-body{padding:0 12px 12px;display:flex;flex-direction:column;gap:8px}
+.col-body.hidden{display:none}
+
+/* Task Card */
+.task{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;transition:all .15s}
+.task:hover{border-color:var(--accent);background:var(--surface3)}
+.task-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.task h3{font-size:14px;font-weight:600;flex:1}
+.task .desc{font-size:13px;color:var(--text2);margin-top:6px;line-height:1.45}
+.task-meta{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tag{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2px 10px;font-size:11px;color:var(--text2);font-weight:500}
+.task-date{font-size:11px;color:var(--text3);margin-left:auto;white-space:nowrap}
+.task-actions{display:flex;gap:4px;flex-shrink:0}
+.task-actions select{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text2);font-size:11px;outline:none;cursor:pointer}
+.task-actions button{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text3);font-size:11px;transition:all .15s}
+.task-actions button:hover{border-color:var(--urgent);color:var(--urgent)}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.active{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:90%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:18px;margin-bottom:18px;font-weight:700}
+.modal label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px;margin-top:14px}
+.modal label:first-of-type{margin-top:0}
+.modal input,.modal select,.modal textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;outline:none}
+.modal textarea{resize:vertical;min-height:70px}
+.modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--accent)}
+.modal-btns{display:flex;gap:10px;margin-top:22px;justify-content:flex-end}
+.modal-btns button{padding:9px 20px;border-radius:8px;font-size:14px;font-weight:600;border:1px solid var(--border)}
+.btn-cancel{background:var(--surface2);color:var(--text2)}
+.btn-cancel:hover{background:var(--surface3)}
+.btn-save{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-save:hover{background:#5a7ae6}
+
+/* Agent Roster */
+.roster{max-width:1400px;margin:0 auto;padding:0 32px 40px}
+.roster h2{font-size:16px;font-weight:700;margin-bottom:14px;color:var(--text2)}
+.roster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.agent-card .emoji{font-size:28px;margin-bottom:8px}
+.agent-card h3{font-size:14px;font-weight:700}
+.agent-card .role{font-size:12px;color:var(--text2);margin-top:2px}
+.agent-card .status{font-size:11px;color:var(--done);margin-top:8px;font-weight:600}
+
+/* Responsive */
+@media(max-width:600px){
+  .header,.stats,.controls,.board,.roster{padding-left:16px;padding-right:16px}
+  .header h1{font-size:22px}
+  .stats{gap:8px}
+  .stat{padding:8px 12px;font-size:12px}
+  .task-top{flex-direction:column}
+  .task-actions{width:100%;justify-content:flex-end}
+  .task-date{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>🦬</span> Murray Command Center</h1>
+  <div class="subtitle">Light Yagami Organization</div>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="controls">
+  <input class="search" id="search" type="text" placeholder="Search tasks...">
+  <select class="tag-filter" id="tagFilter"><option value="">All Tags</option></select>
+  <button class="sort-btn" id="sortBtn" onclick="toggleSort()">Sort: Newest</button>
+  <button class="add-btn" onclick="openModal()">+ New Task</button>
+</div>
+
+<div class="board" id="board"></div>
+
+<div class="roster">
+  <h2>🤖 Agent Roster</h2>
+  <div class="roster-grid">
+    <div class="agent-card"><div class="emoji">🦬</div><h3>Murray</h3><div class="role">CEO / Primary Agent — Claude Opus</div><div class="status">● Online</div></div>
+    <div class="agent-card"><div class="emoji">⚡</div><h3>Sub-Agent Pool</h3><div class="role">On-demand workers spawned for delegation</div><div class="status">● Available</div></div>
+    <div class="agent-card"><div class="emoji">🔍</div><h3>GPT-4o Reviewer</h3><div class="role">Peer review &amp; quality scoring</div><div class="status">● Standby</div></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2 id="modalTitle">New Task</h2>
+    <label>Title</label><input id="mTitle" placeholder="Task title">
+    <label>Description</label><textarea id="mDesc" placeholder="Details..."></textarea>
+    <label>Column</label>
+    <select id="mCol">
+      <option value="urgent">🔴 Urgent</option>
+      <option value="todo" selected>🔵 To Do</option>
+      <option value="deferred">🟡 Deferred</option>
+      <option value="ideas">💡 Ideas</option>
+    </select>
+    <label>Tags (comma-separated)</label><input id="mTags" placeholder="e.g. research, trading-bot">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveTask()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLUMNS=[
+  {id:'urgent',label:'🔴 Urgent',color:'var(--urgent)',collapsed:false},
+  {id:'todo',label:'🔵 To Do',color:'var(--todo)',collapsed:false},
+  {id:'deferred',label:'🟡 Deferred',color:'var(--deferred)',collapsed:false},
+  {id:'ideas',label:'💡 Ideas / Inspiration',color:'var(--ideas)',collapsed:false},
+  {id:'done',label:'✅ Done',color:'var(--done)',collapsed:true},
+];
+
+const DEFAULT_TASKS=[
+  {id:u(),title:"Answer Constitution Survey",desc:"38 questions, 10 sections. Peer-reviewed 97/100 by GPT-4o. Answers become permanent operating constitution.",col:"urgent",tags:["constitution"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Process Survey Answers (Q1-31) Into Profile",desc:"Full survey completed this morning. Needs consolidation into permanent Zonte profile document. Deferred 4+ times.",col:"urgent",tags:["foundation"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Build Constitution from Survey Answers",desc:"Process Light's answers into permanent operating document for Murray.",col:"todo",tags:["constitution"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Strategic Framework",desc:"How Murray dedicates to helping reach 50-100M goal. Task #3 from morning agenda.",col:"todo",tags:["strategy"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Research Hyperliquid Trading Bot",desc:"APIs, existing bots, realistic expectations for 20%+ monthly / 3% max risk.",col:"todo",tags:["trading-bot","research"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Monero Wallet Competitive Landscape",desc:"What exists, where they fail, what 'best wallet' means concretely.",col:"todo",tags:["monero-wallet","research"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Watch 5 OpenClaw Optimization Videos",desc:"From task1-youtube-videos.md. Implement improvements.",col:"todo",tags:["self-improvement"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Design Agent Delegation Protocol (proper)",desc:"Current version is first draft. Needs real planning and design. Not just copy first attempt.",col:"todo",tags:["operations"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Design Peer Review / Quality Check System",desc:"Rigorous system for AI peer review of deliverables. Current GPT-4o approach is prototype only.",col:"todo",tags:["operations"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Design Agent Dashboard & Training System",desc:"Persistent agents with specialties, growing knowledge bases, performance tracking, agents teaching each other.",col:"todo",tags:["operations","vision"],created:"2026-02-10",completed:null},
+  {id:u(),title:"X/Twitter Login",desc:"Need Light to log in via Murray's browser window.",col:"deferred",tags:["setup"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Signal Setup",desc:"Postponed — Mint Mobile eSIM can't receive SMS verification.",col:"deferred",tags:["setup"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Switch Default Model to Sonnet",desc:"Save Opus credits for deep work, Sonnet for routine.",col:"deferred",tags:["cost-optimization"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Agents Teaching Each Other",desc:"Repetitive loop of growing understanding and efficiency. Long-term vision for the org.",col:"ideas",tags:["vision"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Hyperliquid Trading Bot",desc:"20%+ monthly gains, 3% max risk. Side project for practice and personal use.",col:"ideas",tags:["trading-bot"],created:"2026-02-10",completed:null},
+  {id:u(),title:"Constitution Survey V2",desc:"38 questions, 10 sections. Peer-reviewed 3x: 92→95→97.",col:"done",tags:["constitution"],created:"2026-02-10",completed:"2026-02-10"},
+  {id:u(),title:"Agent Delegation Protocol V1",desc:"First draft of rules for briefing sub-agents.",col:"done",tags:["operations"],created:"2026-02-10",completed:"2026-02-10"},
+  {id:u(),title:"Save Reference Docs",desc:"Core Principles V2, Execution Engine V4, Sprint Mode.",col:"done",tags:["foundation"],created:"2026-02-10",completed:"2026-02-10"},
+  {id:u(),title:"TTS Pronunciation",desc:"Murry + Light Yaga me locked in TOOLS.md",col:"done",tags:["setup"],created:"2026-02-10",completed:"2026-02-10"},
+  {id:u(),title:"ElevenLabs TTS Config",desc:"Will voice, bold settings, tagged mode.",col:"done",tags:["setup"],created:"2026-02-10",completed:"2026-02-10"},
+  {id:u(),title:"Deep Survey (Q1-31)",desc:"All answers received from Light.",col:"done",tags:["foundation"],created:"2026-02-10",completed:"2026-02-10"},
+  {id:u(),title:"OpenAI API Config",desc:"GPT-4o available for peer review + fallback.",col:"done",tags:["setup"],created:"2026-02-10",completed:"2026-02-10"},
+  {id:u(),title:"Heartbeat + Memory Systems",desc:"20min heartbeat, memory flush, session search enabled.",col:"done",tags:["setup"],created:"2026-02-10",completed:"2026-02-10"},
+];
+
+function u(){return crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36)}
+
+let tasks=JSON.parse(localStorage.getItem('mcc_tasks')||'null')||DEFAULT_TASKS;
+let colState=JSON.parse(localStorage.getItem('mcc_cols')||'null')||Object.fromEntries(COLUMNS.map(c=>[c.id,c.collapsed]));
+let sortOrder='newest';
+let editingId=null;
+
+function save(){localStorage.setItem('mcc_tasks',JSON.stringify(tasks));localStorage.setItem('mcc_cols',JSON.stringify(colState))}
+function allTags(){return[...new Set(tasks.flatMap(t=>t.tags))].sort()}
+
+function render(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const tf=document.getElementById('tagFilter').value;
+  const filtered=tasks.filter(t=>{
+    if(q&&!t.title.toLowerCase().includes(q)&&!t.desc.toLowerCase().includes(q)&&!t.tags.some(tg=>tg.includes(q)))return false;
+    if(tf&&!t.tags.includes(tf))return false;
+    return true;
+  });
+  const sorted=(col)=>{
+    let list=filtered.filter(t=>t.col===col);
+    list.sort((a,b)=>sortOrder==='newest'?b.created.localeCompare(a.created):a.created.localeCompare(b.created));
+    return list;
+  };
+
+  // Stats
+  const counts={};COLUMNS.forEach(c=>counts[c.id]=tasks.filter(t=>t.col===c.id).length);
+  const active=tasks.filter(t=>t.col!=='done').length;
+  document.getElementById('stats').innerHTML=
+    COLUMNS.map(c=>`<div class="stat"><span class="dot" style="background:${c.color}"></span>${c.label.split(' ').slice(1).join(' ')} <span style="color:var(--text)">${counts[c.id]}</span></div>`).join('')+
+    `<div class="stat" style="margin-left:auto">Total Active <span style="color:var(--accent)">${active}</span></div>`;
+
+  // Tags dropdown
+  const tagSel=document.getElementById('tagFilter');
+  const curTag=tagSel.value;
+  tagSel.innerHTML='<option value="">All Tags</option>'+allTags().map(t=>`<option value="${t}"${t===curTag?' selected':''}>${t}</option>`).join('');
+
+  // Board
+  document.getElementById('board').innerHTML=COLUMNS.map(c=>{
+    const items=sorted(c.id);
+    const collapsed=colState[c.id];
+    return`<div class="column">
+      <div class="col-header" onclick="toggleCol('${c.id}')">
+        <h2><span style="color:${c.color}">${c.label}</span> <span class="count">${items.length}</span></h2>
+        <span class="chevron${collapsed?' collapsed':''}">▾</span>
+      </div>
+      <div class="col-body${collapsed?' hidden':''}">${items.length?items.map(t=>taskCard(t,c)).join(''):`<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">No tasks</div>`}</div>
+    </div>`;
+  }).join('');
+}
+
+function taskCard(t,c){
+  const moveOpts=COLUMNS.filter(x=>x.id!==t.col).map(x=>`<option value="${x.id}">${x.label}</option>`).join('');
+  const promoteBtn=t.col==='ideas'?`<button onclick="moveTask('${t.id}','todo')" title="Promote to To Do">⬆️</button>`:'';
+  return`<div class="task">
+    <div class="task-top">
+      <h3>${esc(t.title)}</h3>
+      <div class="task-actions">
+        ${promoteBtn}
+        <select onchange="moveTask('${t.id}',this.value);this.selectedIndex=0"><option value="">Move →</option>${moveOpts}</select>
+        <button onclick="editTask('${t.id}')" title="Edit">✏️</button>
+        <button onclick="deleteTask('${t.id}')" title="Delete">×</button>
+      </div>
+    </div>
+    ${t.desc?`<div class="desc">${esc(t.desc)}</div>`:''}
+    <div class="task-meta">
+      ${t.tags.map(tg=>`<span class="tag">${esc(tg)}</span>`).join('')}
+      <span class="task-date">${t.completed?'✅ '+t.completed+' · ':''}📅 ${t.created}</span>
+    </div>
+  </div>`;
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function toggleCol(id){colState[id]=!colState[id];save();render()}
+function toggleSort(){sortOrder=sortOrder==='newest'?'oldest':'newest';document.getElementById('sortBtn').textContent='Sort: '+(sortOrder==='newest'?'Newest':'Oldest');render()}
+
+function moveTask(id,col){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  t.col=col;
+  if(col==='done'&&!t.completed)t.completed=new Date().toISOString().slice(0,10);
+  if(col!=='done')t.completed=null;
+  save();render();
+}
+
+function deleteTask(id){if(!confirm('Delete this task?'))return;tasks=tasks.filter(t=>t.id!==id);save();render()}
+
+function openModal(){
+  editingId=null;
+  document.getElementById('modalTitle').textContent='New Task';
+  document.getElementById('mTitle').value='';
+  document.getElementById('mDesc').value='';
+  document.getElementById('mCol').value='todo';
+  document.getElementById('mTags').value='';
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('mTitle').focus();
+}
+
+function editTask(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  editingId=id;
+  document.getElementById('modalTitle').textContent='Edit Task';
+  document.getElementById('mTitle').value=t.title;
+  document.getElementById('mDesc').value=t.desc;
+  document.getElementById('mCol').value=t.col;
+  document.getElementById('mTags').value=t.tags.join(', ');
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('mTitle').focus();
+}
+
+function closeModal(){document.getElementById('modalOverlay').classList.remove('active');editingId=null}
+
+function saveTask(){
+  const title=document.getElementById('mTitle').value.trim();
+  if(!title)return;
+  const desc=document.getElementById('mDesc').value.trim();
+  const col=document.getElementById('mCol').value;
+  const tags=document.getElementById('mTags').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(editingId){
+    const t=tasks.find(x=>x.id===editingId);
+    if(t){t.title=title;t.desc=desc;t.col=col;t.tags=tags;if(col==='done'&&!t.completed)t.completed=new Date().toISOString().slice(0,10);if(col!=='done')t.completed=null;}
+  }else{
+    tasks.push({id:u(),title,desc,col,tags,created:new Date().toISOString().slice(0,10),completed:col==='done'?new Date().toISOString().slice(0,10):null});
+  }
+  save();closeModal();render();
+}
+
+document.getElementById('search').addEventListener('input',render);
+document.getElementById('tagFilter').addEventListener('change',render);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+save();render();
+</script>
+</body>
+</html>

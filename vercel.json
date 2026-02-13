@@ -1,0 +1,57 @@
+{
+  "version": 2,
+  "name": "openclaw-command-center",
+  "builds": [
+    {
+      "src": "command-center.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "react-app/package.json",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/command-center.html"
+    },
+    {
+      "src": "/app/(.*)",
+      "dest": "/react-app/$1"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/react-app/api/$1"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/dashboard",
+      "destination": "/command-center.html"
+    },
+    {
+      "source": "/react",
+      "destination": "/react-app"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "X-Content-Type-Options", 
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ]
+}
