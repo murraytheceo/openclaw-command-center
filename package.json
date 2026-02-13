@@ -1,0 +1,24 @@
+{
+  "name": "dashboard",
+  "version": "1.0.0",
+  "description": "A comprehensive real-time agent monitoring system for OpenClaw Command Center, replacing manual markdown tracking with professional web interface.",
+  "main": "documents-section-enhancement.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/murraytheceo/openclaw-command-center.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/murraytheceo/openclaw-command-center/issues"
+  },
+  "homepage": "https://github.com/murraytheceo/openclaw-command-center#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
