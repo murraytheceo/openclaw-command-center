@@ -1208,11 +1208,26 @@ function openFile(filePath) {
 
 // ─── DOCUMENTS FUNCTIONS ───
 function openDocument(path) {
-  // Show a detailed modal with file info and options
-  alert(`📂 Opening Document\n\nPath: ${path}\n\nIn a real implementation, this would:\n• Open the file in your default editor\n• Show file preview\n• Provide edit/copy/share options`);
+  // Try multiple methods to open the file
+  const fullPath = `/Users/zonte/.openclaw/workspace/${path}`;
   
-  // Future enhancement: integrate with system file handler or VS Code
-  // Example: window.open(`vscode://file/${path}`, '_blank');
+  // Method 1: Try VS Code first (if available)
+  const vscodeUrl = `vscode://file${fullPath}`;
+  const vscodeWindow = window.open(vscodeUrl, '_blank');
+  
+  // Method 2: Fallback to file:// protocol for local files
+  setTimeout(() => {
+    const fileUrl = `file://${fullPath}`;
+    window.open(fileUrl, '_blank');
+  }, 100);
+  
+  // Method 3: Show success toast
+  showToast(`📂 Opening: ${path.split('/').pop()}`);
+  
+  // Method 4: Log for debugging
+  console.log(`Attempting to open: ${fullPath}`);
+  console.log(`VS Code URL: ${vscodeUrl}`);
+  console.log(`File URL: file://${fullPath}`);
 }
 
 function copyDocPath(path) {
