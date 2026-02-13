@@ -371,12 +371,13 @@ const AGENT_STATUS=[
     ]
   },
   {
-    name:'MuteSwap Growth Agent',
-    status:'revision-required',
-    detail:'SUPERSTAR METHOD created, failed QC (87/100)',
+    name:'MuteSwap Growth Strategy',
+    status:'complete',
+    detail:'97/100 Constitutional Excellence - Corrected Business Model',
     files:[
-      {name:'MuteSwap Agent V3 (FINAL)', path:'agents/muteswap-growth-agent/MUTESWAP-GROWTH-AGENT-FINAL-V3.md', type:'markdown'},
-      {name:'Agent Creation Process', path:'agents/muteswap-growth-agent/', type:'folder'}
+      {name:'MuteSwap Growth Strategy FINAL v2', path:'MuteSwap_Growth_Strategy_FINAL_v2.md', type:'markdown'},
+      {name:'Strategy Critical Review', path:'MuteSwap_Strategy_Critical_Review.md', type:'markdown'},
+      {name:'Original Agent Blueprint (Failed QC)', path:'agents/muteswap-growth-agent/MUTESWAP-GROWTH-AGENT-FINAL-V3.md', type:'markdown'}
     ]
   },
   {
@@ -426,9 +427,10 @@ const AGENT_STATUS=[
   {
     name:'SUPERSTAR Creation Method',
     status:'complete',
-    detail:'Reverse engineering + hostile peer review methodology',
+    detail:'Complete Research Paper & Implementation Guide (21K)',
     files:[
-      {name:'SUPERSTAR Method Documentation', path:'reference/SUPERSTAR-CREATION-METHOD.md', type:'markdown'}
+      {name:'SUPERSTAR Method Enhanced (COMPLETE)', path:'reference/SUPERSTAR-CREATION-METHOD-ENHANCED.md', type:'markdown'},
+      {name:'SUPERSTAR Method Original', path:'reference/SUPERSTAR-CREATION-METHOD.md', type:'markdown'}
     ]
   },
   {
@@ -637,6 +639,15 @@ const DOCUMENT_CATEGORIES = {
         date: '2026-02-12',
         description: 'Complete API documentation',
         recent: true
+      },
+      {
+        name: 'Hard-Coded Production Rules',
+        path: 'reference/HARD-CODED-PRODUCTION-RULES.md',
+        size: '5K',
+        date: '2026-02-12',
+        description: 'Systematic prevention of production interruption failures',
+        recent: true,
+        priority: 'high'
       },
       {
         name: 'Dashboard UI Specifications',
@@ -883,7 +894,43 @@ function renderOverview(){
   const activeCnt=AGENTS.filter(a=>a.status!=='idle').length;
   const doneCnt=tasks.filter(t=>t.done).length;
   const monthlyBurn=expenses.reduce((s,e)=>s+e.amount,0);
+  
+  // Get recent documents (last 24 hours)
+  const recentDocs = [];
+  Object.values(DOCUMENT_CATEGORIES).forEach(cat => {
+    cat.documents.forEach(doc => {
+      if (doc.recent) {
+        recentDocs.push({...doc, category: cat.name, icon: cat.icon});
+      }
+    });
+  });
+  
   let h=`<h2 style="font-size:22px;font-weight:700;margin-bottom:20px">Overview</h2>`;
+  
+  // NEW DELIVERABLES ALERT - Never Miss Murray's Work
+  if (recentDocs.length > 0) {
+    h+=`<div style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(34,197,94,0.05));border:2px solid rgba(34,197,94,0.3);border-radius:12px;padding:16px;margin-bottom:20px;position:relative;border-left:4px solid var(--green);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:18px;">🚀</span>
+        <strong style="color:var(--green);font-size:15px;font-weight:700;">NEW DELIVERABLES READY</strong>
+        <span style="font-size:10px;background:rgba(34,197,94,0.25);padding:2px 6px;border-radius:4px;color:var(--green);font-weight:600;">${recentDocs.length} DOCUMENTS</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:8px;">`;
+    
+    recentDocs.slice(0,4).forEach(doc => {
+      h+=`<div onclick="openDocument('${doc.path}')" style="padding:8px;border:1px solid rgba(34,197,94,0.2);border-radius:6px;cursor:pointer;background:rgba(34,197,94,0.08);transition:all 0.15s;" onmouseover="this.style.background='rgba(34,197,94,0.15)'" onmouseout="this.style.background='rgba(34,197,94,0.08)'">
+        <div style="font-weight:600;font-size:11px;margin-bottom:2px;color:var(--text);display:flex;align-items:center;gap:4px;">
+          <span>${doc.icon}</span>
+          ${doc.name}
+        </div>
+        <div style="font-size:9px;color:var(--muted);">${doc.size} • ${doc.description}</div>
+      </div>`;
+    });
+    
+    h+=`</div><div style="font-size:10px;color:var(--muted);text-align:center;">Click any document above or check Documents section for full access</div>
+      <div style="position:absolute;top:-6px;right:16px;background:var(--green);color:white;font-size:9px;padding:3px 8px;border-radius:6px;font-weight:700;box-shadow:0 2px 4px rgba(0,0,0,0.2);">NEVER MISS WORK</div>
+    </div>`;
+  }
   
   // SUPERSTAR CREATION METHOD Sticky Note
   h+=`<div style="background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(251,191,36,0.05));border:2px solid rgba(251,191,36,0.3);border-radius:12px;padding:16px;margin-bottom:20px;position:relative;border-left:4px solid var(--yellow);">
